@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# SIEM runtime data (regenerated when the SIEM runs)
+data/siem.db
+data/alerts.log
+
+# LogHub datasets (downloaded separately, see data/loghub/README.md)
+data/loghub/*.log
+
+# Test / tool caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

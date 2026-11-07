@@ -1,0 +1,17 @@
+# Global SIEM configuration.
+collector:
+  auth_log_path: data/sample_auth.log
+  syslog:
+    host: "0.0.0.0"
+    port: 5514
+
+storage:
+  db_path: data/siem.db
+
+alerts:
+  console: true
+  file_path: data/alerts.log
+
+dashboard:
+  host: "127.0.0.1"
+  port: 5000

@@ -1,0 +1,100 @@
+# =====================================================================
+# Lightweight SIEM - Detection Rules
+# ---------------------------------------------------------------------
+# Loaded by rules/engine.py. To add or edit a rule you only change THIS
+# file - no code changes are required.
+#
+# Common fields:
+#   id          : unique rule identifier
+#   name        : short human-readable name
+#   description : what the rule detects (shown in alerts)
+#   enabled     : true | false (disable without deleting)
+#   type        : threshold | sequence
+#   severity    : low | medium | high | critical
+#   message     : alert text; placeholders {source_ip}, {username},
+#                 {count}, {window_seconds} are filled at alert time.
+#
+# type: threshold  -> counts matching events in a sliding window,
+#                     grouped by a field (usually source_ip).
+#   match.event_type     : normalized event type to count
+#   group_by             : field that separates counters per source
+#   condition.metric     : "count" (number of matching events)
+#   condition.operator   : ">" | ">=" | "<" | "<=" | "=="
+#   condition.value      : threshold value
+#   condition.window_seconds : sliding window length
+#
+# type: sequence   -> ordered pattern of events from the SAME group
+#                     within a time window (correlation rule).
+#   steps[]             : ordered list of {event_type, min_count}
+#   group_by            : field linking the steps (usually source_ip)
+#   window_seconds      : max time from first step to last step
+# =====================================================================
+
+rules:
+
+  # ---- Rule 1: Brute force (the example from the requirements) -------
+  - id: BRUTE_FORCE_001
+    name: "SSH Brute Force"
+    description: "More than 5 failed login attempts from the same IP within 60 seconds."
+    enabled: true
+    type: threshold
+    match:
+      event_type: failed_login
+    group_by: source_ip
+    condition:
+      metric: count
+      operator: ">"
+      value: 5
+      window_seconds: 60
+    severity: high
+    message: "Brute force from {source_ip}: {count} failed logins in {window_seconds}s."
+
+  # ---- Rule 2: Port scan --------------------------------------------
+  - id: PORT_SCAN_001
+    name: "Port Scan"
+    description: "More than 10 port-scan events from the same IP within 30 seconds."
+    enabled: true
+    type: threshold
+    match:
+      event_type: port_scan
+    group_by: source_ip
+    condition:
+      metric: count
+      operator: ">"
+      value: 10
+      window_seconds: 30
+    severity: medium
+    message: "Port scan from {source_ip}: {count} events in {window_seconds}s."
+
+  # ---- Rule 3: Correlation (failures then success = higher severity) -
+  - id: LOGIN_ESCALATION_001
+    name: "Failed Logins Then Success"
+    description: "3+ failed logins followed by a successful login from the same IP within 300 seconds."
+    enabled: true
+    type: sequence
+    steps:
+      - event_type: failed_login
+        min_count: 3
+      - event_type: successful_login
+        min_count: 1
+    group_by: source_ip
+    window_seconds: 300
+    severity: critical
+    message: "Possible compromised account: {count} failures then SUCCESS from {source_ip}."
+
+  # ---- Rule 4: Slow / sustained attack (shows rule extensibility) ---
+  - id: BRUTE_FORCE_SLOW_001
+    name: "Sustained Brute Force"
+    description: "More than 20 failed login attempts from the same IP within 5 minutes."
+    enabled: true
+    type: threshold
+    match:
+      event_type: failed_login
+    group_by: source_ip
+    condition:
+      metric: count
+      operator: ">"
+      value: 20
+      window_seconds: 300
+    severity: medium
+    message: "Sustained attack from {source_ip}: {count} failed logins in {window_seconds}s."
